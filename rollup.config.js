@@ -3,27 +3,37 @@ const json = require('@rollup/plugin-json');
 const commonjs = require('@rollup/plugin-commonjs');
 const { terser } = require('rollup-plugin-terser');
 const { nodeResolve } = require('@rollup/plugin-node-resolve');
+const copy = require('rollup-plugin-copy');
+const clear = require('rollup-plugin-clear');
 
-const { isDev } = require('./utils');
-
-console.log('isDev', isDev);
+const { isDev } = require('./src/utils');
 
 module.exports = {
   input: {
-    index: './index.js',
+    'command/create': './src/command/create.js',
+    'utils/index': './src/utils/index.js',
+    'utils/register-command': './src/utils/register-command.js',
+    index: './src/index.js',
   },
   output: {
-    dir: 'dist/',
-    entryFileNames: '[name]/index.js',
-    format: 'es',
+    dir: 'lib',
+    entryFileNames: '[name].js',
+    // entryFileNames: function (chunkInfo) {
+    //   const { facadeModuleId } = chunkInfo;
+    //   if (facadeModuleId.includes('utils')) {
+    //     return 'utils/[name].js';
+    //   }
+    //   return '[name].js';
+    // },
+    format: 'cjs',
   },
   plugins: [
     json(),
-    terser({
-      compress: {
-        drop_console: true,
-      },
-    }),
+    // terser({
+    //   compress: {
+    //     drop_console: true,
+    //   },
+    // }),
     isDev
       ? [
           nodeResolve(),
@@ -34,7 +44,8 @@ module.exports = {
       : '',
     babel({
       babelHelpers: 'runtime',
-      exclude: 'node_modules/**',
+      exclude: ['node_modules/**'],
     }),
+    clear({ targets: ['lib'] }),
   ],
 };
