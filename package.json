@@ -14,8 +14,8 @@
   ],
   "author": "",
   "bin": {
-    "admin-template-cli": "bin/admin-template-cli",
-    "admin-template-cli-create": "bin/admin-template-cli-create"
+    "admin-template-cli": "bin/admin-template-cli.js",
+    "admin-template-cli-create": "bin/admin-template-cli-create.js"
   },
   "license": "ISC",
   "devDependencies": {

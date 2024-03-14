@@ -1,7 +1,7 @@
 const { registerCommand } = require('./utils/register-command.js');
-const { figletLog } = require('./utils/index.js');
+const { welcome } = require('./utils/index.js');
 
 // 打印欢迎信息
-figletLog();
+welcome();
 // 注册命令
 registerCommand();

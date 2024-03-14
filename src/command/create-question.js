@@ -1,4 +1,6 @@
 const Inquirer = require('inquirer');
+const Chalk = require('chalk');
+const { COLOR_ENUM } = require('../utils/color');
 
 /**
  * 输入项目名称
@@ -46,7 +48,7 @@ const delProjectQuestion = () => {
     {
       name: 'isOverwrite',
       type: 'list',
-      message: '项目已存在，是否覆盖？',
+      message: Chalk.hex(COLOR_ENUM.warning)('项目已存在，是否覆盖？'),
       choices: [
         { name: '确认', value: true },
         { name: '取消', value: false },
@@ -64,7 +66,25 @@ const installQuestion = () => {
     {
       name: 'install',
       type: 'list',
-      message: '是否安装依赖？',
+      message: `是否安装依赖？(推荐使用${Chalk.hex(COLOR_ENUM.primary)('pnpm')}安装)`,
+      choices: [
+        { name: '是', value: true },
+        { name: '否', value: false },
+      ],
+    },
+  ]);
+};
+
+/**
+ * 是否运行项目
+ * @returns {Promise<{isRun:boolean}>}
+ */
+const isRunQuestion = () => {
+  return new Inquirer.prompt([
+    {
+      name: 'isRun',
+      type: 'list',
+      message: `是否运行项目？`,
       choices: [
         { name: '是', value: true },
         { name: '否', value: false },
@@ -78,4 +98,5 @@ module.exports = {
   ruleConfigQuestion,
   delProjectQuestion,
   installQuestion,
+  isRunQuestion
 };

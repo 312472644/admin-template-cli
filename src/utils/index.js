@@ -5,6 +5,7 @@ const Ora = require('ora');
 const fs = require('node:fs');
 const path = require('node:path');
 const { exec } = require('node:child_process');
+const { COLOR_ENUM } = require('./color.js');
 
 // 是否是开发环境
 const isDev = process.env.NODE_ENV === 'development';
@@ -32,7 +33,7 @@ function log(config = { message, type, showSymbol, color }) {
  * @param {string} message
  */
 function logSuccess(message, showSymbol = true) {
-  log({ message, type: 'success', showSymbol, color: '#19be6b' });
+  log({ message, type: 'success', showSymbol, color: COLOR_ENUM.success });
 }
 
 /**
@@ -40,7 +41,7 @@ function logSuccess(message, showSymbol = true) {
  * @param {string} message
  */
 function logError(message, showSymbol = true) {
-  log({ message, type: 'error', color: '#ed4014', showSymbol });
+  log({ message, type: 'error', color: COLOR_ENUM.error, showSymbol });
 }
 
 /**
@@ -48,7 +49,7 @@ function logError(message, showSymbol = true) {
  * @param {string} message
  */
 function logInfo(message, showSymbol = true) {
-  log({ message, type: 'info', color: '#515a6e', showSymbol });
+  log({ message, type: 'info', color: COLOR_ENUM.info, showSymbol });
 }
 
 /**
@@ -56,14 +57,24 @@ function logInfo(message, showSymbol = true) {
  * @param {string} message
  */
 function logWarning(message, showSymbol = true) {
-  log({ message, type: 'warning', color: '#ff9900', showSymbol });
+  log({ message, type: 'warning', color: COLOR_ENUM.warning, showSymbol });
+}
+
+/**
+ * 设置文本颜色
+ * @param {*} color
+ * @returns
+ */
+function setTextColor(color = COLOR_ENUM.loading) {
+  return Chalk.hex(color);
 }
 
 /**
  * 艺术字打印
- * @param {*} config
+ * @param {string} text
+ * @param {object} config
  */
-function figletLog(config) {
+function figletLog(text, config) {
   const mergeConfig = Object.assign(
     {
       font: 'Ghost',
@@ -75,7 +86,7 @@ function figletLog(config) {
     config
   );
   // 打印欢迎信息
-  console.log('\r\n' + Figlet.textSync('Grace', mergeConfig) + '\r\n');
+  console.log('\r\n' + Figlet.textSync(text, mergeConfig) + '\r\n');
 }
 
 /**
@@ -86,6 +97,28 @@ function figletLog(config) {
  */
 function loading(text, color = '#19be6b') {
   return Ora({ text: `${Chalk.hex(color)(text)}`, spinner: 'dots4', indent: 1 });
+}
+
+/**
+ * 命令颜色
+ */
+function cmdColor(text) {
+  return Chalk.hex(COLOR_ENUM.warning)(text);
+}
+
+/**
+ *
+ * 命令参数颜色
+ */
+function cmdOptionColor(text) {
+  return Chalk.hex(COLOR_ENUM.lightPrimary)(text);
+}
+
+/**
+ * 命令描述颜色
+ */
+function cmdDescColor(text) {
+  return Chalk.hex(COLOR_ENUM.warning)(text);
 }
 
 /**
@@ -145,9 +178,9 @@ function sleep(fn, time = 1000) {
 }
 
 /**
- * 执行shell命令
+ * 同步执行shell命令【exec的输出有大小限制，当输出数据量过大时，系统会杀死进程，因而不会触发回调】
  * @param {string} cmd
- * @returns {Promise}
+ * @returns {Promise<{success:boolean,message:string}>}
  */
 function execShellCmd(cmd) {
   if (!cmd) return;
@@ -167,17 +200,77 @@ function execShellCmd(cmd) {
   });
 }
 
+/**
+ * 异步执行shell命令
+ * @param {string} cmd
+ * @param {(data:string)=> void} successCallback 输出信息回调函数
+ * @param {(data:string)=> void} errorCallBack 输出错误信息回调函数
+ */
+function execAsyncShellCmd(cmd, successCallback = () => {}, errorCallBack = () => {}) {
+  if (!cmd) return;
+  const shell = exec(cmd, {});
+  shell.stdout.on('data', successCallback);
+  shell.stderr.on('data', errorCallBack);
+}
+
+/**
+ * 扁平化文件夹路径
+ * @param {string} destPath
+ * @returns {object} 文件路径对象
+ */
+function flatFolderPath(destPath) {
+  if (!destPath) return {};
+  const depend = {};
+  function traverseFolder(folderPath, folderName) {
+    // 获取 src 文件夹下的所有文件
+    const files = fs.readdirSync(folderPath, 'utf-8');
+    files.forEach(item => {
+      const stat = fs.statSync(`${folderPath}/${item}`);
+      if (stat.isDirectory()) {
+        const targetFolderPath = folderName ? `${folderName}/${item}` : item;
+        traverseFolder(`${folderPath}/${item}`, targetFolderPath);
+      } else {
+        const filePath = `${folderPath}/${item}`;
+        if (folderName) {
+          depend[`${folderName}/${item.replace('.js', '')}`] = filePath;
+        } else {
+          depend[item.replace('.js', '')] = filePath;
+        }
+      }
+    });
+  }
+
+  traverseFolder(destPath);
+  return depend;
+}
+
+/**
+ * 欢迎信息
+ */
+function welcome() {
+  figletLog('Grace', { font: 'Ghost' });
+  console.log();
+  console.log(Chalk.hex(COLOR_ENUM.primary)('🍊🍊 欢迎使用 Admin-Template-CLI 🍊🍊'));
+  console.log();
+}
+
 module.exports = {
   isDev,
   logSuccess,
   logError,
   logInfo,
   logWarning,
-  figletLog,
+  welcome,
   loading,
   loadingStop,
   deleteObjKey,
   deleteFileOrFolder,
   sleep,
+  flatFolderPath,
   execShellCmd,
+  setTextColor,
+  cmdOptionColor,
+  cmdDescColor,
+  cmdColor,
+  execAsyncShellCmd,
 };

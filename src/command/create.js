@@ -1,4 +1,4 @@
-const fs = require('node:fs');
+const fs = require('fs');
 const path = require('node:path');
 const {
   logError,
@@ -8,16 +8,29 @@ const {
   execShellCmd,
   deleteObjKey,
   deleteFileOrFolder,
-  logInfo,
+  setTextColor,
+  execAsyncShellCmd,
 } = require('../utils/index.js');
 const {
   inputProNameQuestion,
   ruleConfigQuestion,
   delProjectQuestion,
   installQuestion,
+  isRunQuestion,
 } = require('./create-question.js');
 
 const spinner = loading();
+
+/**
+ * 删除重复项目文件夹
+ * @param {string} projectName
+ */
+const deleteProjectFolder = projectName => {
+  spinner.start(setTextColor()('项目环境准备中...'));
+  fs.rmSync(projectName, { recursive: true });
+  spinner.stop();
+};
+
 /**
  * 创建项目文件夹
  * @param {object} config 项目名称
@@ -26,23 +39,23 @@ const spinner = loading();
 const createProjectFolder = async config => {
   const { projectName, force } = config;
   let success = true;
+
   try {
     // 如果项目已经存在,并且不是强制创建
     if (fs.existsSync(projectName)) {
       if (force) {
-        fs.rmSync(projectName, { recursive: true });
+        deleteProjectFolder(projectName);
       } else {
         const isDelete = await delProjectQuestion();
         if (!isDelete.isOverwrite) {
-          logError('取消创建');
-          return;
+          success = false;
+          return success;
         }
-        fs.rmSync(projectName, { recursive: true });
+        deleteProjectFolder(projectName);
       }
     }
   } catch (error) {
-    logError('错误信息：' + error.message);
-    // throw new Error(`${Chalk.hex('#ed4014')('错误信息：' + error.message)}`);
+    logError(`创建项目失败，可能${projectName}文件夹被占用，请关闭相关程序后重试`);
     success = false;
   } finally {
     return success;
@@ -58,14 +71,14 @@ const createProjectFolder = async config => {
 const cloneRepo = async (giteeUrl, projectName) => {
   let success = true;
   try {
-    spinner.start('项目拉取中...');
+    spinner.start(setTextColor()('项目拉取中...'));
     const { success, message } = await execShellCmd(giteeUrl);
     if (!success) {
       loadingStop(spinner, `项目下载失败：${message}`, 'Fail');
       return;
     }
-    // 重命名文件夹(以项目名称)删除.git文件夹
-    fs.renameSync('backend-management-template', projectName);
+    // 删除.git文件夹
+    // fs.renameSync('backend-management-template', projectName);
     fs.rmSync(`${projectName}/.git`, { recursive: true });
     loadingStop(spinner, `项目拉取成功`, 'Success');
   } catch (error) {
@@ -82,7 +95,7 @@ const cloneRepo = async (giteeUrl, projectName) => {
  */
 const initProject = async config => {
   await sleep(async () => {
-    spinner.start('项目初始化中...');
+    spinner.start(setTextColor()('项目初始化中...'));
     generateProject(config);
   }, 500);
   await sleep(() => {
@@ -102,17 +115,19 @@ const initProject = async config => {
 const downloadRepo = async (
   options = {
     url: '',
-    config: {},
+    config: {
+      projectName: null,
+    },
   }
 ) => {
   const { url, config } = options;
   const { projectName } = config;
 
   // 创建项目文件夹
-  const createSuccess = await createProjectFolder(config);
+  let createSuccess = await createProjectFolder(config);
   if (!createSuccess) return;
   // 拉取项目
-  const isCloneSuccess = await cloneRepo(url, projectName);
+  const isCloneSuccess = await cloneRepo(`${url} ${projectName}`, projectName);
   if (!isCloneSuccess) return;
   // 初始化项目
   await initProject(config);
@@ -125,16 +140,29 @@ const downloadRepo = async (
 const installDependence = async projectName => {
   const result = await installQuestion();
   if (result.install) {
-    spinner.start('依赖安装中...');
-    const cmd = `cd ${projectName} && npm install`;
+    spinner.start(setTextColor()('依赖安装中，请耐心等待...'));
+    const cmd = `cd ${projectName} && pnpm i`;
     try {
       await execShellCmd(cmd);
       loadingStop(spinner, `依赖安装成功`, 'Success');
+      runProject(projectName);
     } catch (error) {
       loadingStop(spinner, `安装依赖失败，${error.message}`, 'Fail');
     }
-  } else {
-    logInfo('请手动安装依赖');
+  }
+};
+
+/**
+ * 启动项目
+ * @param {string} projectName
+ */
+const runProject = async projectName => {
+  const { isRun } = await isRunQuestion();
+  if (isRun) {
+    const cmd = `cd ${projectName} && pnpm run dev`;
+    execAsyncShellCmd(cmd, data => {
+      console.log(data);
+    });
   }
 };
 
@@ -175,6 +203,7 @@ const rewritePackageJson = options => {
   if (!ruleConfig.includes('Eslint')) {
     // 删除eslint
     delete packageJson.scripts['lint'];
+    packageJson.scripts['build'] = 'vite build';
     deleteObjKey(devDependencies, ['eslint', 'eslint-plugin-vue', 'vue-eslint-parser']);
 
     // 删除.eslintrc.js
@@ -186,12 +215,33 @@ const rewritePackageJson = options => {
 };
 
 /**
+ * 删除eslint plugin
+ * @param {string} projectName
+ */
+const deleteEslintPlugin = projectName => {
+  const filePath = path.resolve(process.cwd(), projectName + '/vite/plugins/index.js');
+  let file = fs.readFileSync(filePath, {
+    encoding: 'utf-8',
+  });
+  // 删除eslint plugin 引用
+  file = file
+    .replace(`import eslintPlugin from 'vite-plugin-eslint';\r\n`, '')
+    .replace(`// eslint\r\n`, '')
+    .replace(`vitePlugins.push(eslintPlugin({ include: ['./src/**/*.{vue,js,ts}'] }));\r\n`, '');
+
+  fs.writeFileSync(filePath, file);
+};
+
+/**
  * 重写package.json
  * @param {object} config
  */
 const generateProject = config => {
-  // console.log('config', config);
   rewritePackageJson(config);
+  const choiceList = config.ruleConfig || [];
+  if (!choiceList.includes('Eslint')) {
+    deleteEslintPlugin(config.projectName);
+  }
 };
 
 /**
@@ -205,6 +255,7 @@ const implementCreateCmd = async options => {
   const config = {
     projectName: null,
     force,
+    ruleConfig: [],
   };
   const projectName = options.name || (await inputProNameQuestion()).projectName;
   const ruleConfig = (await ruleConfigQuestion()).config || [];
