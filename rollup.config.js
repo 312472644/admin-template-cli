@@ -1,7 +1,7 @@
 const { babel } = require('@rollup/plugin-babel');
 const json = require('@rollup/plugin-json');
 const commonjs = require('@rollup/plugin-commonjs');
-const { terser } = require('rollup-plugin-terser');
+const  terser = require('@rollup/plugin-terser');
 const { nodeResolve } = require('@rollup/plugin-node-resolve');
 const clear = require('rollup-plugin-clear');
 
