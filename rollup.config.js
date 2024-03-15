@@ -16,11 +16,11 @@ module.exports = {
   },
   plugins: [
     json(),
-    // terser({
-    //   compress: {
-    //     drop_console: true,
-    //   },
-    // }),
+    terser({
+      compress: {
+        drop_console: true,
+      },
+    }),
     isDev
       ? [
           nodeResolve(),

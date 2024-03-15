@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('node:path');
 const {
-  logError,
   loadingStop,
   loading,
   sleep,
@@ -55,7 +54,11 @@ const createProjectFolder = async config => {
       }
     }
   } catch (error) {
-    logError(`创建项目失败，可能${projectName}文件夹被占用，请关闭相关程序后重试`);
+    loadingStop(
+      spinner,
+      `创建项目失败，可能${projectName}文件夹被占用，请关闭相关程序后重试`,
+      'Fail'
+    );
     success = false;
   } finally {
     return success;
@@ -200,8 +203,8 @@ const rewritePackageJson = options => {
     deleteFileOrFolder(projectName + '/.stylelintrc');
   }
 
+  // 删除eslint
   if (!ruleConfig.includes('Eslint')) {
-    // 删除eslint
     delete packageJson.scripts['lint'];
     packageJson.scripts['build'] = 'vite build';
     deleteObjKey(devDependencies, ['eslint', 'eslint-plugin-vue', 'vue-eslint-parser']);

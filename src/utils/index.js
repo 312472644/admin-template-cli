@@ -250,7 +250,7 @@ function flatFolderPath(destPath) {
 function welcome() {
   figletLog('Grace', { font: 'Ghost' });
   console.log();
-  console.log(Chalk.hex(COLOR_ENUM.primary)('🍊🍊 欢迎使用 Admin-Template-CLI 🍊🍊'));
+  console.log(Chalk.hex(COLOR_ENUM.primary)('🍊🍊 欢迎使用 g-vue-template-cli 🍊🍊'));
   console.log();
 }
 

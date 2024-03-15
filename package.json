@@ -1,21 +1,32 @@
 {
-  "name": "admin-template-cli",
-  "version": "1.0.0",
-  "description": "",
+  "name": "g-vue-template-cli",
+  "version": "0.0.6",
+  "description": "快速生成后台管理系统模板（vue3 + vite + eslint + husky + stylelint ）的脚手架",
   "main": "index.js",
   "scripts": {
     "build:dev": "cross-env NODE_ENV=development rollup -c ",
-    "build:prod": "cross-env NODE_ENV=production rollup -c"
+    "build:prod": "cross-env NODE_ENV=production rollup -c",
+    "prepublishOnly": "node check-lib"
   },
-  "keywords": [],
+  "keywords": [
+    "vue",
+    "template-cli",
+    "admin",
+    "system"
+  ],
   "files": [
     "bin",
     "lib"
   ],
-  "author": "",
+  "author": "sugar",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/312472644/admin-template-cli"
+  },
+  "homepage": "https://github.com/312472644",
   "bin": {
-    "admin-template-cli": "bin/admin-template-cli.js",
-    "admin-template-cli-create": "bin/admin-template-cli-create.js"
+    "g-vue-template-cli": "bin/g-vue-template-cli.js",
+    "g-vue-template-cli-create": "bin/g-vue-template-cli-create.js"
   },
   "license": "ISC",
   "devDependencies": {
@@ -23,14 +34,6 @@
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
-    "chalk": "^4.0.0",
-    "commander": "^12.0.0",
-    "cross-env": "^7.0.3",
-    "figlet": "^1.7.0",
-    "fs-extra": "^11.2.0",
-    "inquirer": "^8.2.6",
-    "log-symbols": "^4.0.0",
-    "ora": "^5.4.1",
     "rollup": "^4.12.1",
     "rollup-plugin-clear": "^2.0.7",
     "rollup-plugin-terser": "^7.0.2"
@@ -39,6 +42,14 @@
     "@babel/plugin-transform-runtime": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
     "@babel/runtime": "^7.24.0",
-    "core-js": "^3.36.0"
+    "core-js": "^3.36.0",
+    "chalk": "^4.0.0",
+    "commander": "^12.0.0",
+    "cross-env": "^7.0.3",
+    "figlet": "^1.7.0",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^8.2.6",
+    "log-symbols": "^4.0.0",
+    "ora": "^5.4.1"
   }
 }
