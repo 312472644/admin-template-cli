@@ -22,7 +22,7 @@
   "author": "sugar",
   "repository": {
     "type": "git",
-    "url": "https://github.com/312472644/admin-template-cli",
+    "url": "https://github.com/312472644/admin-template-cli"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
